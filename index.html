@@ -1,0 +1,282 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Easy college</title><style>
+:root{font-family:Arial,Helvetica,sans-serif;color:#27313c;background:#f4f7fb}*{box-sizing:border-box}body{margin:0}header{background:#087cc3;color:white;padding:16px 4%;display:flex;align-items:center;justify-content:space-between}header h1{margin:0;font-size:24px}main{max-width:1150px;margin:22px auto;padding:0 16px}.panel{background:white;border:1px solid #e2e8f0;border-radius:9px;padding:20px;margin:15px 0;box-shadow:0 2px 9px #0c2d4510}h2{font-size:20px;margin:0 0 14px}h3{font-size:16px}label{display:block;font-weight:600;margin:12px 0 5px}input,select,textarea,button{font:inherit;padding:10px;border-radius:6px}input,select,textarea{border:1px solid #cbd5e1;width:100%;background:white}button{background:#0b8bcf;color:white;border:0;cursor:pointer}button:disabled{opacity:.55;cursor:default}button.secondary{background:#eaf2fa;color:#13517b}button.danger{background:#be3144}.hidden{display:none!important}.muted{color:#64748b}.small{font-size:13px}.error{color:#c01b37}.success{color:#16744c}.toolbar{display:flex;align-items:end;gap:12px;flex-wrap:wrap}.toolbar>*{flex:1;min-width:160px}.toolbar button{flex:0 0 auto}.tabs{display:flex;gap:6px}.tabs button{background:#dbeefa;color:#17608c}.tabs button.active{background:#087cc3;color:white}.scroll{overflow-x:auto}table{border-collapse:collapse;width:100%;min-width:550px}th,td{padding:11px;border-bottom:1px solid #e3e9ef;text-align:left}th{background:#eef6fb;font-size:14px}td button{padding:6px 9px}.note{font-weight:700;color:#0085cb;text-decoration:underline;cursor:pointer}.badge{display:inline-block;background:#edf5ff;padding:5px 9px;border-radius:5px}.dot{display:inline-block;width:15px;height:15px;border-radius:50%;vertical-align:middle}.green{background:#08ae57}.blue{background:#168fd2}.yellow{background:#f3ca21}.red{background:#ef2933}.skills-table th{background:#128dca;color:white}.skills-table td{border-right:1px solid #e8edf2}.skills-table th:not(:first-child){text-align:center;min-width:105px}.skills-table td:not(:first-child){text-align:center}.modal{position:fixed;inset:0;background:#0b1d33a3;display:flex;justify-content:center;align-items:start;padding:5vh 12px;z-index:3;overflow:auto}.modal-box{background:white;width:min(860px,100%);border-radius:9px;padding:20px;box-shadow:0 20px 70px #071a3366}.modal-head{display:flex;justify-content:space-between;align-items:center}.modal-head h2{margin:0}.link{color:#008dd2}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.score-input{width:90px}.mini{padding:7px;font-size:13px}.skills-form{display:grid;grid-template-columns:2fr 1fr auto;gap:8px;align-items:end;margin:8px 0}.file-link{display:inline-block;margin:8px 0;color:#087cc3}@media(max-width:650px){.skills-form{grid-template-columns:1fr}.panel{padding:13px}header{padding:14px}header h1{font-size:20px}}
+</style></head><body><header><h1>🎓 Easy college</h1><div><span id="identity"></span> <button id="logout" class="secondary hidden">Déconnexion</button></div></header><main>
+<section id="configuration" class="panel hidden"><h2>Configuration Firebase</h2><p>Ajoute les identifiants de ton projet dans <code>firebase-config.js</code> puis consulte le guide README.</p></section>
+<section id="login" class="panel" style="max-width:460px;margin:65px auto"><h2>Connexion</h2><p class="muted">Espace professeur et élèves</p><p class="muted small">À la première connexion, tu indiques une fois l’adresse e-mail Firebase du compte. Ensuite, tu utilises ton identifiant simple.</p><form id="loginForm"><label>Identifiant</label><input id="email" type="text" autocomplete="username" placeholder="professeur, assia, isaac…" required><label>Mot de passe</label><input id="password" type="password" autocomplete="current-password" required><p id="loginError" class="error" role="alert"></p><button>Se connecter</button></form></section>
+<div class="modal hidden" id="associateModal"><div class="modal-box" style="max-width:490px">
+<h2>Première connexion : <span id="assocName"></span></h2>
+<p class="muted">Associe cet identifiant à l'adresse e-mail utilisée pour créer ce compte dans Firebase Authentication. À faire une seule fois sur cet appareil. Aucun mot de passe n'est enregistré.</p>
+<form id="associateForm"><label>Adresse e-mail Firebase</label><input id="assocEmail" type="email" autocomplete="email" required placeholder="adresse-du-compte@exemple.fr"><p id="assocError" class="error"></p><div style="display:flex;gap:8px"><button type="submit">Enregistrer l'association</button><button type="button" id="assocCancel" class="secondary">Annuler</button></div></form>
+</div></div>
+<section id="workspace" class="hidden"><div class="tabs"><button class="active" id="notesTab">Notes</button><button id="skillsTab">Compétences</button></div>
+<section class="panel"><div class="toolbar"><div><label>Choisir une matière</label><select id="subject"><option value="Culture algérienne">Culture algérienne</option><option value="Sport">Sport</option></select></div><div id="teacherActions" class="hidden"><button id="newEvaluation">+ Créer une évaluation</button> <button id="repairNotes" type="button" class="secondary">🔧 Réparer les notes des élèves</button></div></div></section>
+<section class="panel" id="notesPanel"><h2>Notes <span class="muted small" id="notesSubtitle"></span></h2><div class="scroll"><table><thead id="gradeHead"></thead><tbody id="gradeBody"></tbody></table></div></section>
+<section class="panel hidden" id="skillsPanel"><h2>Compétences</h2><div id="skillOverview"></div></section>
+<p id="status" role="status"></p></section></main>
+<div class="modal hidden" id="createModal"><div class="modal-box"><div class="modal-head"><h2>Nouvelle évaluation</h2><button class="secondary" data-close="createModal">✕</button></div><form id="evaluationForm"><div class="grid"><div><label>Titre de l'évaluation</label><input id="evalTitle" maxlength="110" placeholder="Ex. DST 1 : Fractions" required></div><div><label>Type d'évaluation</label><select id="evalType"><option>Devoir surveillé</option><option>Évaluation écrite</option><option>Évaluation orale</option><option>Travaux pratiques</option><option>Contrôle</option></select></div><div><label>Date de l'évaluation</label><input id="evalDate" type="date" required></div></div><label>Barème de l’évaluation (sur combien ?)</label><input id="maxScore" type="number" min="1" max="1000" step="0.5" value="20" required><h3>Notes des élèves</h3><p class="small muted">Une note vide signifie « non noté ».</p><div id="entryRows" class="grid"></div><h3>Compétences associées à cette évaluation (10 maximum)</h3><p class="small muted">Ajoute une compétence, puis choisis une couleur différente pour chaque élève. « Non évalué » ne publie aucune couleur.</p><div id="skillEntries"></div><button type="button" class="secondary" id="addSkill">+ Ajouter une compétence</button><label>Corrigé PDF (facultatif, 10 Mo maximum)</label><input id="correction" type="file" accept="application/pdf,.pdf"><p class="small muted">Les compétences sont visibles immédiatement. Les notes et le corrigé seront visibles après 15 minutes.</p><p id="saveError" class="error"></p><button id="saveEvaluation" type="submit">Publier l'évaluation</button></form></div></div>
+<div class="modal hidden" id="editSkillsModal"><div class="modal-box"><div class="modal-head"><h2>Modifier les compétences de l’évaluation</h2><button class="secondary" data-close="editSkillsModal" type="button">✕</button></div><p id="editSkillsTitle" class="muted"></p><p class="small muted">Ajoute jusqu’à 10 compétences, puis attribue une couleur différente à chaque élève. Les changements apparaissent immédiatement. Les notes ne sont pas modifiées.</p><form id="editSkillsForm"><div id="editSkillsRows"></div><button type="button" id="editAddSkill" class="secondary">+ Ajouter une compétence</button><p id="editSkillsError" class="error" role="alert"></p><div style="margin-top:14px"><button type="submit" id="editSkillsSave">Enregistrer les compétences</button></div></form></div></div>
+<div class="modal hidden" id="detailModal"><div class="modal-box"><div class="modal-head"><h2>DÉTAIL DE L'ÉVALUATION</h2><button class="secondary" data-close="detailModal">✕</button></div><div class="panel" id="detailInfo"></div><div class="panel"><h3 class="link">COMPÉTENCES</h3><div id="detailSkills" class="scroll"></div></div><button class="secondary" data-close="detailModal">Fermer</button></div></div>
+<script type="module">
+import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+import {getFirestore,doc,getDoc,collection,query,where,onSnapshot,writeBatch,serverTimestamp,Timestamp} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+import {getStorage,ref,uploadBytes,getBlob} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-storage.js';
+// Configuration Web du projet Firebase comp-7a7e7.
+// Les mots de passe ne doivent jamais être inscrits dans ce fichier.
+const firebaseConfig = {
+  apiKey: "AIzaSyDYpN9rKM1DJqz-PdxQ0g1Zutrzi2jkk7A",
+  authDomain: "comp-7a7e7.firebaseapp.com",
+  projectId: "comp-7a7e7",
+  storageBucket: "comp-7a7e7.firebasestorage.app",
+  messagingSenderId: "399175183305",
+  appId: "1:399175183305:web:093bcf96c9e2b3d9f35618",
+  measurementId: "G-KMRE4WTNMP"
+};
+
+const $=id=>document.getElementById(id),show=(id,v)=>$(id).classList.toggle('hidden',!v);
+const subjects=['Culture algérienne','Sport'],levels=[['red','Maîtrise insuffisante'],['yellow','Maîtrise fragile'],['blue','Maîtrise satisfaisante'],['green','Très bonne maîtrise']];
+let auth,db,storage,profile,students=[],evaluations=[],skillsPublic=[],scores={},studentRefs=[],subscribers=[],scoreSubs=[],skillSubs=[],refreshTimer=null,selectedTab='notes',activeDetail=null;
+function text(el,s){el.textContent=String(s??'');return el}function node(tag,s){return text(document.createElement(tag),s)}
+function td(s){return node('td',s)}function dateString(s){if(!s)return '—';const [y,m,d]=s.split('-');return `${d}/${m}/${y}`}
+function number(n){return Number(n).toFixed(2).replace('.',',')}
+function err(e){console.error(e);$('status').className='error';$('status').textContent='Erreur : '+(e.code||e.message||'inconnue')}
+function clear(){subscribers.forEach(f=>f());subscribers=[];scoreSubs.forEach(f=>f());scoreSubs=[];skillSubs.forEach(f=>f());skillSubs=[];if(refreshTimer)clearInterval(refreshTimer);refreshTimer=null;students=[];evaluations=[];skillsPublic=[];scores={};studentRefs=[]}
+// Association locale identifiant -> adresse Firebase, sans stocker les mots de passe.
+// Chaque appareil doit faire l'association une fois, ou utiliser directement l'e-mail.
+const noms=['professeur','assia','isaac','ahmed','mohamed','nolan'];
+const keyFor=id=>'easycollege.email.'+id;
+const comptes=Object.fromEntries(noms.map(id=>[id,localStorage.getItem(keyFor(id))||'']));
+function afficherAssociation(id){
+  $('assocName').textContent=id.charAt(0).toUpperCase()+id.slice(1);
+  $('assocEmail').value=comptes[id]||'';
+  $('assocError').textContent='';
+  show('associateModal',true);
+}
+$('associateForm').onsubmit=e=>{
+  e.preventDefault();
+  const id=$('email').value.trim().toLowerCase();
+  const adresse=$('assocEmail').value.trim().toLowerCase();
+  if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(adresse)){$('assocError').textContent='Adresse e-mail invalide.';return}
+  comptes[id]=adresse;localStorage.setItem(keyFor(id),adresse);
+  show('associateModal',false);
+  $('loginError').textContent='Adresse associée sur cet appareil. Clique sur Se connecter.';
+};
+$('assocCancel').onclick=()=>show('associateModal',false);
+const ready=firebaseConfig.apiKey!=='REMPLACER';show('configuration',!ready);show('login',ready);
+if(ready){const app=initializeApp(firebaseConfig);auth=getAuth(app);db=getFirestore(app);storage=getStorage(app);
+$('loginForm').onsubmit=async e=>{e.preventDefault();$('loginError').textContent='';try{const identifiant=$('email').value.trim().toLowerCase();const adresse=comptes[identifiant];if(!adresse && identifiant.includes('@')){await signInWithEmailAndPassword(auth,identifiant,$('password').value);return}
+if(!noms.includes(identifiant)){$('loginError').textContent='Identifiant inconnu. Utilise professeur, assia, isaac, ahmed, mohamed ou nolan.';return}
+if(!adresse){afficherAssociation(identifiant);return}
+await signInWithEmailAndPassword(auth,adresse,$('password').value)}catch(e){$('loginError').textContent='Identifiants incorrects ou compte non autorisé.'}};
+$('logout').onclick=()=>signOut(auth);
+onAuthStateChanged(auth,async user=>{clear();profile=null;show('login',!user);show('workspace',false);show('logout',!!user);$('identity').textContent='';if(!user)return;
+try{const p=await getDoc(doc(db,'users',user.uid));if(!p.exists()||!['teacher','student'].includes(p.data().role))throw Error('Profil manquant');profile={uid:user.uid,...p.data()};
+const ident=$('email').value.trim().toLowerCase();
+if(ident==='professeur' && profile.role!=='teacher')throw Error('Ce compte ne possède pas le rôle professeur.');
+if(ident!=='professeur' && noms.includes(ident) && profile.role!=='student')throw Error('Ce compte ne possède pas le rôle élève.');
+$('identity').textContent=profile.name||user.email;show('login',false);show('workspace',true);show('teacherActions',profile.role==='teacher');
+if(profile.role==='teacher'){subscribers.push(onSnapshot(collection(db,'users'),s=>{students=s.docs.filter(d=>d.data().role==='student').map(d=>({uid:d.id,...d.data()})).sort((a,b)=>a.name.localeCompare(b.name));subscribeStudentSkills();render()},err))}else students=[profile];
+if(profile.role==='teacher')subscribeEvaluations();
+else {
+ subscribers.push(onSnapshot(collection(db,'users',profile.uid,'evaluationRefs'),snap=>{studentRefs=snap.docs.map(d=>({id:d.id,...d.data()}));loadStudentEvaluations()},err));
+ subscribers.push(onSnapshot(collection(db,'users',profile.uid,'skills'),snap=>{skillsPublic=snap.docs.map(d=>({id:d.id,...d.data(),studentId:profile.uid}));loadStudentEvaluations();render()},err));
+ refreshTimer=setInterval(loadStudentEvaluations,30000);
+}
+}catch(e){console.error(e);$('loginError').textContent='Compte sans profil autorisé.';await signOut(auth)}});
+}
+function subscribeStudentSkills(){
+ skillSubs.forEach(f=>f());skillSubs=[];skillsPublic=[];
+ if(profile?.role!=='teacher')return;
+ for(const st of students){
+  const unsub=onSnapshot(collection(db,'users',st.uid,'skills'),snap=>{
+   skillsPublic=skillsPublic.filter(x=>x.studentId!==st.uid).concat(snap.docs.map(d=>({id:d.id,...d.data(),studentId:st.uid})));
+   render();
+  },err);skillSubs.push(unsub);
+ }
+}
+function subscribeEvaluations(){if(!profile)return;const old=subscribers.filter(f=>f._isEval);old.forEach(f=>f());subscribers=subscribers.filter(f=>!f._isEval);const q=profile.role==='teacher'?collection(db,'evaluations'):query(collection(db,'evaluations'),where('releaseAt','<=',Timestamp.now()));const unsub=onSnapshot(q,s=>{evaluations=s.docs.map(d=>({id:d.id,...d.data()}));subscribeScores();render()},err);unsub._isEval=true;subscribers.push(unsub)}
+// Les élèves lisent uniquement des documents précis, jamais toute la collection
+// evaluations. Les règles Firebase contrôlent l'heure de publication et l'UID.
+let studentLoadId=0;
+async function loadStudentEvaluations(){
+ if(profile?.role!=='student')return;
+ const loadId=++studentLoadId;
+ const ids=new Set([...studentRefs.map(r=>r.id),...skillsPublic.map(r=>r.id)]);
+ const allowed=[...ids].filter(id=>{
+  const ref=studentRefs.find(r=>r.id===id);
+  // Pour les anciennes évaluations sans référence, tenter la lecture :
+  // Firestore refusera les notes avant la date de publication.
+  return !ref?.releaseAt || (ref.releaseAt.toMillis?.()??Infinity)<=Date.now();
+ });
+ const found=[];
+ for(const id of allowed){
+  try {const snap=await getDoc(doc(db,'evaluations',id));if(snap.exists())found.push({id:snap.id,...snap.data()});}
+  catch(e){if(e.code!=='permission-denied')console.error('Lecture évaluation',id,e);}
+ }
+ if(loadId!==studentLoadId||profile?.role!=='student')return;
+ evaluations=found;subscribeScores();render();
+}
+function subscribeScores(){scoreSubs.forEach(f=>f());scoreSubs=[];scores={};for(const ev of evaluations){const q=profile.role==='teacher'?collection(db,'evaluations',ev.id,'scores'):doc(db,'evaluations',ev.id,'scores',profile.uid);scoreSubs.push(onSnapshot(q,s=>{scores[ev.id]=profile.role==='teacher'?Object.fromEntries(s.docs.map(d=>[d.id,d.data().value])):(s.exists()?{[profile.uid]:s.data().value}:{});render()},err))}}
+// Répare les index manquants des évaluations déjà publiées, sans changer releaseAt.
+$('repairNotes').onclick=async()=>{
+ if(profile?.role!=='teacher')return;
+ const btn=$('repairNotes');btn.disabled=true;
+ $('status').className='muted';$('status').textContent='Réparation des accès élèves en cours…';
+ try {
+  if(!students.length)throw Error('Aucun élève chargé. Attends quelques secondes.');
+  if(!evaluations.length)throw Error('Aucune évaluation chargée. Attends quelques secondes.');
+  // 450 écritures par lot maximum (limite Firestore : 500).
+  let batch=writeBatch(db),count=0,total=0;
+  for(const ev of evaluations){
+   if(!ev.releaseAt || typeof ev.releaseAt.toMillis!=='function')continue;
+   for(const st of students){
+    batch.set(doc(db,'users',st.uid,'evaluationRefs',ev.id),{
+      releaseAt:ev.releaseAt,createdBy:ev.createdBy||profile.uid
+    });
+    count++;total++;
+    if(count===450){await batch.commit();batch=writeBatch(db);count=0;}
+   }
+  }
+  if(count)await batch.commit();
+  $('status').className='success';$('status').textContent=`Accès réparés : ${total} références élèves enregistrées. Les notes déjà âgées de 15 minutes peuvent maintenant apparaître.`;
+ }catch(e){console.error(e);$('status').className='error';$('status').textContent='Réparation refusée : '+(e.code||e.message)+' — Publie le fichier firestore.rules du ZIP dans Firebase, puis réessaie.';}
+ finally{btn.disabled=false;}
+};
+$('subject').onchange=render;
+$('notesTab').onclick=()=>setTab('notes');$('skillsTab').onclick=()=>setTab('skills');
+function setTab(tab){selectedTab=tab;show('notesPanel',tab==='notes');show('skillsPanel',tab==='skills');$('notesTab').classList.toggle('active',tab==='notes');$('skillsTab').classList.toggle('active',tab==='skills');render()}
+function visible(ev){return profile?.role==='teacher'||(ev.releaseAt?.toMillis?.()??Infinity)<=Date.now()}
+function current(){return evaluations.filter(e=>e.subject===$('subject').value&&visible(e)).sort((a,b)=>(a.date||'').localeCompare(b.date||''))}
+function render(){if(!profile)return;const es=current();const names=profile.role==='teacher'?students:[profile];
+$('notesSubtitle').textContent=`— ${$('subject').value}`;$('gradeHead').replaceChildren();$('gradeBody').replaceChildren();
+const h=document.createElement('tr');h.append(node('th','Élève'));es.forEach(e=>{const th=node('th',e.title);if(profile.role==='teacher'){const b=node('button','✏️ Compétences');b.type='button';b.className='secondary mini';b.style.display='block';b.style.marginTop='6px';b.onclick=()=>editSkills(e);th.append(b)}h.append(th)});$('gradeHead').append(h);
+for(const student of names){const tr=document.createElement('tr');tr.append(td(student.name||'Élève'));for(const ev of es){const cell=document.createElement('td'),grade=scores[ev.id]?.[student.uid];if(typeof grade==='number'){const btn=node('button',number(grade)+'/'+(ev.maxScore||20));btn.className='note secondary';btn.onclick=()=>openDetail(ev,student.uid);cell.append(btn)}else cell.textContent='—';tr.append(cell)}$('gradeBody').append(tr)}
+if(!names.length){const tr=document.createElement('tr'),cell=td('Aucun élève configuré');cell.colSpan=es.length+1;tr.append(cell);$('gradeBody').append(tr)}
+const overview=$('skillOverview');overview.replaceChildren();const skillEvs=skillsPublic.filter(e=>e.subject===$('subject').value && Array.isArray(e.skills) && e.skills.length).sort((a,b)=>(a.date||'').localeCompare(b.date||''));for(const ev of skillEvs){const block=document.createElement('div');block.className='panel';const title=node('h3',ev.title+' — '+dateString(ev.date));block.append(title);for(const st of names){if(ev.studentId!==st.uid)continue;const button=node('button',(st.name||'Élève')+' — consulter');button.className='secondary mini';button.style.margin='4px';button.onclick=()=>openSkillDetail(ev,st.uid);block.append(button)}overview.append(block)}if(!skillEvs.length)overview.append(node('p','Aucune compétence publiée.'));
+}
+$('newEvaluation').onclick=()=>{if(profile?.role!=='teacher')return;$('evaluationForm').reset();$('evalDate').value=new Date().toLocaleDateString('en-CA');$('saveError').className='error';$('saveError').textContent='';$('saveEvaluation').disabled=false;$('saveEvaluation').textContent="Publier l'évaluation";$('skillEntries').replaceChildren();const entries=$('entryRows');entries.replaceChildren();for(const st of students){const wrap=document.createElement('div'),label=node('label',st.name);const input=document.createElement('input');input.type='number';input.min=0;input.max=Number($('maxScore').value);input.step='.01';input.placeholder='Non noté';input.dataset.uid=st.uid;input.className='grade-entry';wrap.append(label,input);entries.append(wrap)}show('createModal',true)};
+$('evaluationForm').addEventListener('invalid',e=>{const label=e.target.closest('div')?.querySelector('label');$('saveError').className='error';$('saveError').textContent='Champ obligatoire ou invalide : '+(label?.textContent||e.target.id||'vérifie le formulaire');},true);
+$('maxScore').oninput=()=>document.querySelectorAll('.grade-entry').forEach(input=>input.max=$('maxScore').value);
+$('addSkill').onclick=()=>{
+ const parent=$('skillEntries');if(parent.children.length>=10)return;
+ const line=document.createElement('div');line.className='panel skill-row';
+ const title=document.createElement('input');title.placeholder='Intitulé de la compétence (ex. Coopérer)';title.maxLength=160;title.required=true;title.className='skill-name';
+ line.append(node('label','Nom de la compétence'),title);
+ const grid=document.createElement('div');grid.className='grid';
+ for(const st of students){
+  const cell=document.createElement('div');cell.append(node('label',st.name));
+  const level=document.createElement('select');level.className='student-skill-level';level.dataset.uid=st.uid;
+  const empty=document.createElement('option');empty.value='';empty.textContent='Non évalué';level.append(empty);
+  for(const [value,name] of levels){const opt=document.createElement('option');opt.value=value;opt.textContent=({red:'🔴 ',yellow:'🟡 ',blue:'🔵 ',green:'🟢 '})[value]+name;level.append(opt)}
+  cell.append(level);grid.append(cell);
+ }
+ line.append(grid);const del=node('button','Supprimer cette compétence');del.type='button';del.className='danger';del.style.marginTop='10px';del.onclick=()=>line.remove();line.append(del);parent.append(line);
+};
+let editingEvaluation=null;
+function editSkills(ev){
+ if(profile?.role!=='teacher')return;
+ editingEvaluation=ev;
+ $('editSkillsTitle').textContent=ev.title+' — '+ev.subject+' — '+dateString(ev.date);
+ $('editSkillsError').textContent='';
+ $('editSkillsRows').replaceChildren();
+ const saved=students.map(st=>({uid:st.uid,skills:skillsPublic.find(x=>x.id===ev.id&&x.studentId===st.uid)?.skills||[]}));
+ const titles=[...new Set(saved.flatMap(x=>x.skills.map(k=>k.title)))].slice(0,10);
+ for(const title of titles){
+  const byUid=Object.fromEntries(saved.map(x=>[x.uid,x.skills.find(k=>k.title===title)?.level||'']));
+  addEditSkillRow(title,byUid);
+ }
+ show('editSkillsModal',true);
+}
+function addEditSkillRow(title='',values={}){
+ const parent=$('editSkillsRows');if(parent.children.length>=10)return;
+ const line=document.createElement('div');line.className='panel edit-skill-row';
+ const name=document.createElement('input');name.className='edit-skill-name';name.required=true;name.maxLength=160;name.placeholder='Nom de la compétence';name.value=title;
+ line.append(node('label','Compétence'),name);
+ const grid=document.createElement('div');grid.className='grid';
+ for(const st of students){
+  const cell=document.createElement('div');cell.append(node('label',st.name));
+  const sel=document.createElement('select');sel.className='edit-skill-level';sel.dataset.uid=st.uid;
+  const empty=document.createElement('option');empty.value='';empty.textContent='Non évalué';sel.append(empty);
+  for(const [value,label] of levels){const opt=document.createElement('option');opt.value=value;opt.textContent=({red:'🔴 ',yellow:'🟡 ',blue:'🔵 ',green:'🟢 '})[value]+label;sel.append(opt)}
+  sel.value=values[st.uid]||'';cell.append(sel);grid.append(cell);
+ }
+ line.append(grid);const del=node('button','Supprimer cette compétence');del.type='button';del.className='danger';del.style.marginTop='10px';del.onclick=()=>line.remove();line.append(del);parent.append(line);
+}
+$('editAddSkill').onclick=()=>addEditSkillRow();
+$('editSkillsForm').onsubmit=async e=>{
+ e.preventDefault();if(profile?.role!=='teacher'||!editingEvaluation)return;
+ const btn=$('editSkillsSave');btn.disabled=true;$('editSkillsError').textContent='';
+ try{
+  const rows=[...document.querySelectorAll('.edit-skill-row')];
+  if(rows.length>10)throw Error('Maximum 10 compétences.');
+  const names=rows.map(row=>row.querySelector('.edit-skill-name').value.trim());
+  if(names.some(n=>!n)||new Set(names.map(n=>n.toLowerCase())).size!==names.length)throw Error('Les noms des compétences doivent être remplis et différents.');
+  const batch=writeBatch(db);
+  for(const st of students){
+   const skills=rows.map((row,i)=>({title:names[i],level:row.querySelector('.edit-skill-level[data-uid="'+st.uid+'"]').value})).filter(k=>k.level);
+   const data={subject:editingEvaluation.subject,title:editingEvaluation.title,date:editingEvaluation.date,skills,createdBy:profile.uid};
+   batch.set(doc(db,'users',st.uid,'skills',editingEvaluation.id),data);
+  }
+  await batch.commit();
+  show('editSkillsModal',false);
+  $('status').className='success';$('status').textContent='Compétences mises à jour ! Les élèves les voient immédiatement.';
+ }catch(error){console.error(error);$('editSkillsError').textContent='Impossible de modifier les compétences : '+(error.code||error.message)}finally{btn.disabled=false}
+};
+$('evaluationForm').onsubmit=async e=>{e.preventDefault();if(profile?.role!=='teacher')return;const btn=$('saveEvaluation');if(btn.disabled)return;btn.disabled=true;btn.textContent='Publication en cours…';$('saveError').className='muted';$('saveError').textContent='Connexion à Firebase et enregistrement…';try{
+const maxScore=Number($('maxScore').value);if(!Number.isFinite(maxScore)||maxScore<=0||maxScore>1000)throw Error('Barème invalide');const grades={};for(const input of document.querySelectorAll('.grade-entry')){if(input.value==='')continue;const val=Number(input.value);if(!Number.isFinite(val)||val<0||val>maxScore)throw Error('Note invalide');grades[input.dataset.uid]=val}
+const skillRows=Array.from(document.querySelectorAll('.skill-row'));if(skillRows.length>10||skillRows.some(row=>!row.querySelector('.skill-name').value.trim()))throw Error('Compétence invalide');const skillsByStudent=Object.fromEntries(students.map(st=>[st.uid,skillRows.map(row=>({title:row.querySelector('.skill-name').value.trim(),level:row.querySelector('.student-skill-level[data-uid="'+st.uid+'"]').value})).filter(skill=>skill.level)]));
+const file=$('correction').files[0];if(file&&(file.type!=='application/pdf'||file.size>10*1024*1024))throw Error('Le corrigé doit être un PDF de 10 Mo maximum');
+const docRef=doc(collection(db,'evaluations'));let correctionPath=null;
+// Un fichier envoyé avant publication reste inaccessible aux élèves jusqu'à releaseAt.
+if(file){correctionPath=`corrections/${docRef.id}/corrige.pdf`;await uploadBytes(ref(storage,correctionPath),file,{contentType:'application/pdf'})}
+const releaseAt=Timestamp.fromMillis(Date.now()+15*60*1000);
+const values=Object.values(grades);
+const stats=values.length?{mean:values.reduce((a,b)=>a+b,0)/values.length,min:Math.min(...values),max:Math.max(...values)}:null;
+const common={subject:$('subject').value,title:$('evalTitle').value.trim(),date:$('evalDate').value};
+const evData={...common,maxScore,type:$('evalType').value,correctionPath,createdBy:profile.uid,createdAt:serverTimestamp(),releaseAt};
+// Étape 1 : sauvegarde de l'évaluation et de ses notes.
+// La publication différée est imposée par les règles Firestore.
+let step='évaluation et notes';
+try {
+ const gradeBatch=writeBatch(db);
+ gradeBatch.set(docRef,evData);
+ for(const [uid,value] of Object.entries(grades)) gradeBatch.set(doc(db,'evaluations',docRef.id,'scores',uid),{value});
+ await gradeBatch.commit();
+} catch(error) {
+ throw Error('Firebase refuse l’enregistrement des notes (evaluations / scores) : '+(error.code||error.message));
+}
+// Étape 1 bis : index individuel, séparé pour qu'une règle manquante
+// sur evaluationRefs ne bloque jamais l'enregistrement des notes.
+let refsError=null;
+try {
+ const refsBatch=writeBatch(db);
+ for(const st of students) refsBatch.set(doc(db,'users',st.uid,'evaluationRefs',docRef.id),{releaseAt,createdBy:profile.uid});
+ await refsBatch.commit();
+} catch(error) { refsError=error; console.error('Index élèves non enregistré',error); }
+// Étape 2 : compétences individuelles, sans données de notes.
+// Une erreur ici n'annule pas les notes déjà enregistrées : signaler l'échec explicitement.
+let skillError=null;
+if(skillRows.length){
+ try {
+  const skillBatch=writeBatch(db);
+  for(const st of students) skillBatch.set(doc(db,'users',st.uid,'skills',docRef.id),{...common,skills:skillsByStudent[st.uid],createdBy:profile.uid});
+  await skillBatch.commit();
+ } catch(error) { skillError=error; console.error('Compétences non publiées',error); }
+}
+show('createModal',false);
+$('status').className=(skillError||refsError)?'error':'success';
+$('status').textContent=skillError
+ ?'Notes enregistrées, MAIS compétences non publiées : '+(skillError.code||skillError.message)
+ :refsError?'Notes enregistrées, mais index élèves refusé : publie les règles Firestore fournies pour que les élèves voient les notes après 15 minutes.'
+ :'Évaluation enregistrée ! Compétences visibles immédiatement ; notes dans 15 minutes.';
+}catch(e){console.error(e);$('saveError').className='error';$('saveError').textContent=(e.message||'Publication impossible')+' — Vérifie les autorisations Firebase et la console F12.'}finally{btn.disabled=false;btn.textContent="Publier l'évaluation"}};
+function openSkillDetail(ev,uid){const out=$('detailSkills');$('detailInfo').replaceChildren(node('h3',ev.title+' — '+dateString(ev.date)),node('p','Compétences disponibles immédiatement. Les notes seront publiées 15 minutes après leur saisie.'));drawSkills(out,ev.skills);show('detailModal',true)}
+function drawSkills(out,skills){out.replaceChildren();if(!skills?.length){out.append(node('p','Aucune compétence associée.'))}else{const table=document.createElement('table');table.className='skills-table';const tr=document.createElement('tr');tr.append(node('th','Compétence'));for(const [,name] of levels)tr.append(node('th',name));const head=document.createElement('thead');head.append(tr);table.append(head);const body=document.createElement('tbody');for(const skill of skills){const row=document.createElement('tr');row.append(td(skill.title));for(const [level] of levels){const cell=document.createElement('td');if(level===skill.level){const dot=document.createElement('span');dot.className='dot '+level;cell.append(dot)}row.append(cell)}body.append(row)}table.append(body);out.append(table)}}
+function openDetail(ev,uid){if(!visible(ev))return;activeDetail={ev,uid};const info=$('detailInfo');info.replaceChildren();const title=node('h3',ev.title);title.className='link';info.append(title);
+const add=(name,value)=>{const p=document.createElement('p');const strong=node('strong',name+' : ');p.append(strong,document.createTextNode(String(value)));info.append(p)};
+add("Type d'évaluation",ev.type);add('Date',dateString(ev.date));const score=scores[ev.id]?.[uid];add("Note de l'élève",typeof score==='number'?number(score)+'/'+(ev.maxScore||20):'Non noté');if(profile.role==='teacher' && ev.stats){add('Moyenne de la classe',number(ev.stats.mean)+'/'+(ev.maxScore||20));add('Minimum',number(ev.stats.min)+'/'+(ev.maxScore||20));add('Maximum',number(ev.stats.max)+'/'+(ev.maxScore||20))}
+if(ev.correctionPath){const btn=node('button','📄 Consulter le corrigé PDF');btn.onclick=async()=>{btn.disabled=true;try{const blob=await getBlob(ref(storage,ev.correctionPath));const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='corrige-'+ev.id+'.pdf';a.click();setTimeout(()=>URL.revokeObjectURL(url),60000)}catch(e){alert('Corrigé indisponible : '+e.message)}finally{btn.disabled=false}};info.append(btn)}
+const personalSkills=skillsPublic.find(x=>x.id===ev.id&&x.studentId===uid);drawSkills($('detailSkills'),personalSkills?.skills||[]);show('detailModal',true)}
+document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>show(b.dataset.close,false));
+
+</script></body></html>
